@@ -1,0 +1,7 @@
+name: fluid-render-recorder
+
+project_files:
+  - commands/host/fluid-record
+
+post_install_actions:
+  - echo "fluid-render-recorder add-on installed. Run 'ddev fluid-record <url>' for a deep (Xdebug coverage) record."
