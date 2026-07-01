@@ -42,21 +42,18 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         $request->getAttribute('frontend.cache.instruction')
             ?->disableCache('EXT:fluid_render_recorder: recording active');
 
-        $requestedDeep = strtolower($request->getHeaderLine($this->depthHeader($config))) === 'deep';
-        $depth = $requestedDeep && $this->coverageAvailable() ? 'deep' : 'shallow';
+        $deepActive = strtolower($request->getHeaderLine($this->depthHeader($config))) === 'deep'
+            && $this->startCoverage();
+        $depth = $deepActive ? 'deep' : 'shallow';
 
         $runId = $request->getHeaderLine($this->runHeader($config));
         $this->recorder->activate($key, $runId !== '' ? $runId : 'default', $depth);
-
-        if ($depth === 'deep') {
-            \xdebug_start_code_coverage();
-        }
 
         try {
             return $handler->handle($request);
         } finally {
             try {
-                if ($depth === 'deep') {
+                if ($deepActive) {
                     $coverage = \xdebug_get_code_coverage();
                     \xdebug_stop_code_coverage();
                     foreach (array_keys($coverage) as $executedFile) {
@@ -78,12 +75,25 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         }
     }
 
-    private function coverageAvailable(): bool
+    private function startCoverage(): bool
     {
-        return function_exists('xdebug_start_code_coverage')
-            && function_exists('xdebug_get_code_coverage')
-            && function_exists('xdebug_stop_code_coverage')
-            && str_contains((string)ini_get('xdebug.mode'), 'coverage');
+        if (
+            !function_exists('xdebug_start_code_coverage')
+            || !function_exists('xdebug_get_code_coverage')
+            || !function_exists('xdebug_stop_code_coverage')
+            || !function_exists('xdebug_code_coverage_started')
+        ) {
+            return false;
+        }
+
+        \xdebug_start_code_coverage();
+        if (\xdebug_code_coverage_started()) {
+            return true;
+        }
+
+        \xdebug_stop_code_coverage();
+
+        return false;
     }
 
     private function contextAllowed(array $config): bool
