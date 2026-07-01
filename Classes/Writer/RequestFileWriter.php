@@ -27,8 +27,11 @@ final class RequestFileWriter
             'assets' => $recorder->assets(),
         ];
 
+        $json = json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
         $file = $directory . '/' . bin2hex(random_bytes(16)) . '.json';
-        file_put_contents($file, json_encode($body, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+        if (file_put_contents($file, $json) === false) {
+            throw new \RuntimeException('Cannot write recorder file: ' . $file, 1751371300);
+        }
 
         return $file;
     }

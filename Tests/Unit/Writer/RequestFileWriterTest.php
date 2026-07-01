@@ -48,4 +48,16 @@ final class RequestFileWriterTest extends UnitTestCase
         self::assertNotFalse($requestsRoot);
         self::assertStringStartsWith($requestsRoot, (string)realpath($file));
     }
+
+    #[Test]
+    public function throwsOnUnencodableBodyRatherThanWritingCorruptOutput(): void
+    {
+        $outputDir = sys_get_temp_dir() . '/far-' . bin2hex(random_bytes(4));
+        $recorder = new RecorderContext();
+        $recorder->activate("\xB1\x31", 'run-x');
+        $recorder->recordTemplate('/project/x/T.html');
+
+        $this->expectException(\JsonException::class);
+        (new RequestFileWriter())->write($recorder, $outputDir, '/project');
+    }
 }
