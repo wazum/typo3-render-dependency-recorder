@@ -27,7 +27,7 @@ final class RecordingTemplatePathsTest extends UnitTestCase
         $paths = RecordingTemplatePaths::fromExisting($source, $recorder);
         $paths->getTemplateSource('Default', 'Simple');
 
-        self::assertContains($fixtures . '/Templates/Default/Simple.html', $recorder->templates());
+        self::assertContains($fixtures . '/Templates/Default/Simple.html', $recorder->files());
     }
 
     #[Test]
@@ -41,7 +41,7 @@ final class RecordingTemplatePathsTest extends UnitTestCase
         $paths->setTemplateSource('<h1>inline</h1>');
 
         self::assertSame('<h1>inline</h1>', $paths->getTemplateSource());
-        self::assertSame([], $recorder->templates());
+        self::assertSame([], $recorder->files());
     }
 
     #[Test]
@@ -58,6 +58,6 @@ final class RecordingTemplatePathsTest extends UnitTestCase
         $paths = RecordingTemplatePaths::fromExisting($base, $recorder);
         $paths->getTemplateSource('Default', 'Simple');
 
-        self::assertContains($fixtures . '/Templates/Default/Simple.html', $recorder->templates());
+        self::assertContains($fixtures . '/Templates/Default/Simple.html', $recorder->files());
     }
 }

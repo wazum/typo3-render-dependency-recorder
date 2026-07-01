@@ -14,18 +14,21 @@ final class RecorderContext implements SingletonInterface
 
     private string $runId = '';
 
+    private string $depth = '';
+
     /** @var array<string, true> */
-    private array $templates = [];
+    private array $files = [];
 
     /** @var array<string, true> */
     private array $assets = [];
 
-    public function activate(string $key, string $runId): void
+    public function activate(string $key, string $runId, string $depth = 'shallow'): void
     {
         $this->active = true;
         $this->key = $key;
         $this->runId = $runId;
-        $this->templates = [];
+        $this->depth = $depth;
+        $this->files = [];
         $this->assets = [];
     }
 
@@ -34,7 +37,8 @@ final class RecorderContext implements SingletonInterface
         $this->active = false;
         $this->key = null;
         $this->runId = '';
-        $this->templates = [];
+        $this->depth = '';
+        $this->files = [];
         $this->assets = [];
     }
 
@@ -53,12 +57,17 @@ final class RecorderContext implements SingletonInterface
         return $this->runId;
     }
 
-    public function recordTemplate(string $absolutePath): void
+    public function depth(): string
+    {
+        return $this->depth;
+    }
+
+    public function recordFile(string $absolutePath): void
     {
         if (!$this->active || $absolutePath === '') {
             return;
         }
-        $this->templates[$absolutePath] = true;
+        $this->files[$absolutePath] = true;
     }
 
     public function recordAssetEntry(string $entry): void
@@ -70,9 +79,9 @@ final class RecorderContext implements SingletonInterface
     }
 
     /** @return array<string> */
-    public function templates(): array
+    public function files(): array
     {
-        $paths = array_keys($this->templates);
+        $paths = array_keys($this->files);
         sort($paths);
         return $paths;
     }

@@ -20,9 +20,10 @@ final class RequestFileWriter
         $body = [
             'key' => $recorder->key(),
             'runId' => $recorder->runId(),
-            'renderedTemplates' => array_map(
+            'depth' => $recorder->depth(),
+            'files' => array_map(
                 static fn (string $path): string => str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path,
-                $recorder->templates(),
+                $recorder->files(),
             ),
             'assets' => $recorder->assets(),
         ];

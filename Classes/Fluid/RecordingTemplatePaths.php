@@ -76,7 +76,7 @@ final class RecordingTemplatePaths extends TemplatePaths
             return;
         }
         if (is_string($path) && $path !== '' && is_file($path)) {
-            $this->recorder->recordTemplate($path);
+            $this->recorder->recordFile($path);
         }
     }
 }

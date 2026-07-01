@@ -37,7 +37,7 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
             public function __construct(private RecorderContext $recorder) {}
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
-                $this->recorder->recordTemplate('/x/T.html');
+                $this->recorder->recordFile('/x/T.html');
                 $assets = GeneralUtility::makeInstance(AssetCollector::class);
                 $assets->addJavaScript('vite:source/main.ts', '/_assets/main.js');
                 $assets->addStyleSheet('vite:source/main.ts:assets/x.css', '/_assets/x.css');

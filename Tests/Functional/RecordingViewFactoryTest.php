@@ -29,7 +29,7 @@ final class RecordingViewFactoryTest extends FunctionalTestCase
         self::assertInstanceOf(FluidViewAdapter::class, $view);
         $view->render();
 
-        self::assertContains($fixtures . '/Page.html', $recorder->templates());
+        self::assertContains($fixtures . '/Page.html', $recorder->files());
     }
 
     #[Test]
@@ -44,7 +44,7 @@ final class RecordingViewFactoryTest extends FunctionalTestCase
         ));
         $view->render();
 
-        self::assertSame([], $recorder->templates());
+        self::assertSame([], $recorder->files());
     }
 
     #[Test]
@@ -64,6 +64,6 @@ final class RecordingViewFactoryTest extends FunctionalTestCase
             templatePathAndFilename: $fixtures . '/Page.html',
         ))->render();
 
-        self::assertContains($fixtures . '/Page.html', $recorder->templates());
+        self::assertContains($fixtures . '/Page.html', $recorder->files());
     }
 }

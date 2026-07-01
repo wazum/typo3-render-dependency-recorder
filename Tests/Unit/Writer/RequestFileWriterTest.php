@@ -19,7 +19,7 @@ final class RequestFileWriterTest extends UnitTestCase
 
         $recorder = new RecorderContext();
         $recorder->activate('../evil/key', 'run 1/x');
-        $recorder->recordTemplate('/project/local/a/B.html');
+        $recorder->recordFile('/project/local/a/B.html');
         $recorder->recordAssetEntry('source/main.ts');
 
         $file = (new RequestFileWriter())->write($recorder, $outputDir, $projectPath);
@@ -30,7 +30,7 @@ final class RequestFileWriterTest extends UnitTestCase
 
         $body = json_decode((string)file_get_contents($file), true);
         self::assertSame('../evil/key', $body['key']);
-        self::assertSame(['local/a/B.html'], $body['renderedTemplates']);
+        self::assertSame(['local/a/B.html'], $body['files']);
         self::assertSame(['source/main.ts'], $body['assets']);
     }
 
@@ -40,7 +40,7 @@ final class RequestFileWriterTest extends UnitTestCase
         $outputDir = sys_get_temp_dir() . '/far-' . bin2hex(random_bytes(4));
         $recorder = new RecorderContext();
         $recorder->activate('k', '..');
-        $recorder->recordTemplate('/project/x/T.html');
+        $recorder->recordFile('/project/x/T.html');
 
         $file = (new RequestFileWriter())->write($recorder, $outputDir, '/project');
 
@@ -55,9 +55,23 @@ final class RequestFileWriterTest extends UnitTestCase
         $outputDir = sys_get_temp_dir() . '/far-' . bin2hex(random_bytes(4));
         $recorder = new RecorderContext();
         $recorder->activate("\xB1\x31", 'run-x');
-        $recorder->recordTemplate('/project/x/T.html');
+        $recorder->recordFile('/project/x/T.html');
 
         $this->expectException(\JsonException::class);
         (new RequestFileWriter())->write($recorder, $outputDir, '/project');
+    }
+
+    #[Test]
+    public function writesDepthFromRecorder(): void
+    {
+        $outputDir = sys_get_temp_dir() . '/far-' . bin2hex(random_bytes(4));
+        $recorder = new RecorderContext();
+        $recorder->activate('k', 'run-1', 'deep');
+        $recorder->recordFile('/project/x/T.html');
+
+        $file = (new RequestFileWriter())->write($recorder, $outputDir, '/project');
+
+        $body = json_decode((string)file_get_contents($file), true);
+        self::assertSame('deep', $body['depth']);
     }
 }

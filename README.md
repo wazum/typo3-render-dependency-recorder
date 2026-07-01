@@ -29,7 +29,7 @@ The recording is genuinely dynamic — it captures what *rendered*, including wh
 
 For every recorded request, two sets:
 
-- **`renderedTemplates`** — every Fluid source file the render resolved, whatever its role: page templates, layouts, partials, content-element templates, and (opt-in) `<c:…>` component templates. Repo-relative paths.
+- **`files`** — every Fluid source file the render resolved, whatever its role: page templates, layouts, partials, content-element templates, and (opt-in) `<c:…>` component templates. Repo-relative paths.
 - **`assets`** — the frontend asset entrypoints emitted for the page: Vite entries (e.g. `source/main.ts`) recovered from the `AssetCollector`, plus non-Vite external asset sources (e.g. `EXT:my_ext/Resources/Public/app.js`). Build-output hashes and external URLs are deliberately excluded.
 
 ## Requirements
@@ -76,7 +76,8 @@ var/fluid-render-recorder/requests/<runId>/<random>.json
 {
     "key": "home",
     "runId": "run-1",
-    "renderedTemplates": [
+    "depth": "shallow",
+    "files": [
         "packages/site/Resources/Private/PageView/Layouts/Default.html",
         "packages/site/Resources/Private/PageView/Templates/Default.html",
         "packages/site/Resources/Private/Components/Content/Text/Text.html"
