@@ -8,19 +8,23 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Page\AssetCollector;
 use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
 use Wazum\FluidRenderRecorder\Writer\RequestFileWriter;
 
-final readonly class RecorderMiddleware implements MiddlewareInterface
+final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     public function __construct(
-        private RecorderContext $recorder,
-        private RequestFileWriter $writer,
-        private AssetCollector $assetCollector,
-        private ExtensionConfiguration $extensionConfiguration,
+        private readonly RecorderContext $recorder,
+        private readonly RequestFileWriter $writer,
+        private readonly AssetCollector $assetCollector,
+        private readonly ExtensionConfiguration $extensionConfiguration,
     ) {}
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
@@ -51,7 +55,8 @@ final readonly class RecorderMiddleware implements MiddlewareInterface
                     Environment::getVarPath() . '/fluid-render-recorder',
                     Environment::getProjectPath(),
                 );
-            } catch (\Throwable) {
+            } catch (\Throwable $exception) {
+                $this->logger?->warning('Fluid render recorder failed to persist a request file', ['exception' => $exception]);
             } finally {
                 $this->recorder->deactivate();
             }

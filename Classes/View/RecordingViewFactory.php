@@ -7,17 +7,21 @@ namespace Wazum\FluidRenderRecorder\View;
 use TYPO3\CMS\Core\View\ViewFactoryData;
 use TYPO3\CMS\Core\View\ViewFactoryInterface;
 use TYPO3\CMS\Core\View\ViewInterface;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContext as FluidRenderingContext;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
 use Wazum\FluidRenderRecorder\Fluid\RecordingTemplatePaths;
 use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
 
-final readonly class RecordingViewFactory implements ViewFactoryInterface
+final class RecordingViewFactory implements ViewFactoryInterface, LoggerAwareInterface
 {
+    use LoggerAwareTrait;
+
     public function __construct(
-        private ViewFactoryInterface $inner,
-        private RecorderContext $recorder,
+        private readonly ViewFactoryInterface $inner,
+        private readonly RecorderContext $recorder,
     ) {}
 
     public function create(ViewFactoryData $data): ViewInterface
@@ -34,7 +38,9 @@ final readonly class RecordingViewFactory implements ViewFactoryInterface
                 RecordingTemplatePaths::fromExisting($renderingContext->getTemplatePaths(), $this->recorder),
             );
             $this->disableCompileCache($renderingContext);
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            $this->logger?->warning('Fluid render recorder failed to instrument a view', ['exception' => $exception]);
+
             return $view;
         }
 
