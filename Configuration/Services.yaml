@@ -10,6 +10,12 @@ services:
   Wazum\FluidRenderRecorder\Recorder\RecorderContext:
     public: true
 
+  Wazum\FluidRenderRecorder\Middleware\RecorderMiddleware:
+    public: true
+
+  Wazum\FluidRenderRecorder\Writer\RequestFileWriter:
+    public: true
+
   Wazum\FluidRenderRecorder\View\RecordingViewFactory:
     decorates: TYPO3\CMS\Core\View\ViewFactoryInterface
     arguments:
