@@ -1,0 +1,29 @@
+{
+  "name": "@wazum/typo3-fluid-render-recorder-vite",
+  "version": "0.1.0",
+  "description": "Vite plugin emitting an entry→source-files graph for the TYPO3 Fluid Render Recorder.",
+  "license": "GPL-2.0-or-later",
+  "author": "Wolfgang Klinger <wolfgang@wazum.com>",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc"
+  },
+  "peerDependencies": {
+    "sass": ">=1.60",
+    "vite": ">=5"
+  },
+  "devDependencies": {
+    "sass": "^1.77",
+    "typescript": "^5.4",
+    "vite": "^7.0"
+  }
+}
