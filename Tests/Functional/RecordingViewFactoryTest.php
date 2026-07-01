@@ -1,0 +1,49 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Wazum\FluidRenderRecorder\Tests\Functional;
+
+use PHPUnit\Framework\Attributes\Test;
+use TYPO3\CMS\Core\View\ViewFactoryData;
+use TYPO3\CMS\Core\View\ViewFactoryInterface;
+use TYPO3\CMS\Fluid\View\FluidViewAdapter;
+use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
+use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+
+final class RecordingViewFactoryTest extends FunctionalTestCase
+{
+    protected array $testExtensionsToLoad = ['wazum/typo3-fluid-render-recorder'];
+
+    #[Test]
+    public function recordsTheRenderedTemplateFileWhenActive(): void
+    {
+        $fixtures = __DIR__ . '/Fixtures/Templates';
+        $recorder = $this->get(RecorderContext::class);
+        $recorder->activate('demo', 'run-1');
+
+        $view = $this->get(ViewFactoryInterface::class)->create(new ViewFactoryData(
+            templateRootPaths: [$fixtures],
+            templatePathAndFilename: $fixtures . '/Page.html',
+        ));
+        self::assertInstanceOf(FluidViewAdapter::class, $view);
+        $view->render();
+
+        self::assertContains($fixtures . '/Page.html', $recorder->templates());
+    }
+
+    #[Test]
+    public function recordsNothingWhenInactive(): void
+    {
+        $fixtures = __DIR__ . '/Fixtures/Templates';
+        $recorder = $this->get(RecorderContext::class);
+
+        $view = $this->get(ViewFactoryInterface::class)->create(new ViewFactoryData(
+            templateRootPaths: [$fixtures],
+            templatePathAndFilename: $fixtures . '/Page.html',
+        ));
+        $view->render();
+
+        self::assertSame([], $recorder->templates());
+    }
+}

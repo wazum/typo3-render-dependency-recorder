@@ -9,3 +9,9 @@ services:
 
   Wazum\FluidRenderRecorder\Recorder\RecorderContext:
     public: true
+
+  Wazum\FluidRenderRecorder\View\RecordingViewFactory:
+    decorates: TYPO3\CMS\Core\View\ViewFactoryInterface
+    arguments:
+      $inner: '@Wazum\FluidRenderRecorder\View\RecordingViewFactory.inner'
+      $recorder: '@Wazum\FluidRenderRecorder\Recorder\RecorderContext'
