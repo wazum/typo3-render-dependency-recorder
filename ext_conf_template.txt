@@ -6,3 +6,6 @@ runHeader = X-Render-Run
 
 # cat=recorder; type=string; label=Comma-separated application contexts in which recording is allowed (prefix match)
 activeContexts = Testing
+
+# cat=recorder; type=string; label=Comma-separated project roots captured paths are filtered to (repo-relative prefixes)
+roots = source/,local/

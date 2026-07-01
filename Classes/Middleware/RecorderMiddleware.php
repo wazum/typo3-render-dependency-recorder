@@ -54,6 +54,7 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
                     $this->recorder,
                     Environment::getVarPath() . '/fluid-render-recorder',
                     Environment::getProjectPath(),
+                    $this->rootsList($config),
                 );
             } catch (\Throwable $exception) {
                 $this->logger?->warning('Fluid render recorder failed to persist a request file', ['exception' => $exception]);
@@ -157,5 +158,18 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         return is_string($config['runHeader'] ?? null) && $config['runHeader'] !== ''
             ? $config['runHeader']
             : 'X-Render-Run';
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     * @return array<string>
+     */
+    private function rootsList(array $config): array
+    {
+        $raw = is_string($config['roots'] ?? null) && $config['roots'] !== ''
+            ? $config['roots']
+            : 'source/,local/';
+
+        return array_values(array_filter(array_map('trim', explode(',', $raw)), static fn (string $root): bool => $root !== ''));
     }
 }

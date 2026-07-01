@@ -8,7 +8,7 @@ use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
 
 final class RequestFileWriter
 {
-    public function write(RecorderContext $recorder, string $outputDir, string $projectPath): string
+    public function write(RecorderContext $recorder, string $outputDir, string $projectPath, array $roots = []): string
     {
         $runSegment = $this->sanitiseSegment($recorder->runId());
         $directory = rtrim($outputDir, '/') . '/requests/' . $runSegment;
@@ -17,14 +17,15 @@ final class RequestFileWriter
         }
 
         $prefix = rtrim($projectPath, '/') . '/';
+        $relativeFiles = array_map(
+            static fn (string $path): string => str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path,
+            $recorder->files(),
+        );
         $body = [
             'key' => $recorder->key(),
             'runId' => $recorder->runId(),
             'depth' => $recorder->depth(),
-            'files' => array_map(
-                static fn (string $path): string => str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path,
-                $recorder->files(),
-            ),
+            'files' => $this->filterToRoots($relativeFiles, $roots),
             'assets' => $recorder->assets(),
         ];
 
@@ -41,5 +42,30 @@ final class RequestFileWriter
     {
         $safe = preg_replace('/[^A-Za-z0-9_-]/', '_', $value) ?? '';
         return $safe === '' ? 'default' : $safe;
+    }
+
+    /**
+     * @param array<string> $files
+     * @param array<string> $roots
+     * @return array<string>
+     */
+    private function filterToRoots(array $files, array $roots): array
+    {
+        if ($roots === []) {
+            return $files;
+        }
+
+        return array_values(array_filter(
+            $files,
+            static function (string $file) use ($roots): bool {
+                foreach ($roots as $root) {
+                    if (str_starts_with($file, $root)) {
+                        return true;
+                    }
+                }
+
+                return false;
+            },
+        ));
     }
 }

@@ -74,4 +74,21 @@ final class RequestFileWriterTest extends UnitTestCase
         $body = json_decode((string)file_get_contents($file), true);
         self::assertSame('deep', $body['depth']);
     }
+
+    #[Test]
+    public function filtersFilesToConfiguredRoots(): void
+    {
+        $outputDir = sys_get_temp_dir() . '/far-' . bin2hex(random_bytes(4));
+        $recorder = new RecorderContext();
+        $recorder->activate('k', 'run-1');
+        $recorder->recordFile('/project/local/a/B.html');
+        $recorder->recordFile('/project/source/x.ts');
+        $recorder->recordFile('/project/vendor/lib/C.php');
+        $recorder->recordFile('/outside/D.php');
+
+        $file = (new RequestFileWriter())->write($recorder, $outputDir, '/project', ['source/', 'local/']);
+
+        $body = json_decode((string)file_get_contents($file), true);
+        self::assertSame(['local/a/B.html', 'source/x.ts'], $body['files']);
+    }
 }
