@@ -18,7 +18,11 @@ final class RequestFileWriter
 
         $prefix = rtrim($projectPath, '/') . '/';
         $relativeFiles = array_map(
-            static fn (string $path): string => str_starts_with($path, $prefix) ? substr($path, strlen($prefix)) : $path,
+            static function (string $path) use ($prefix): string {
+                $resolved = realpath($path);
+                $absolute = $resolved !== false ? $resolved : $path;
+                return str_starts_with($absolute, $prefix) ? substr($absolute, strlen($prefix)) : $absolute;
+            },
             $recorder->files(),
         );
         $body = [

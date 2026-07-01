@@ -76,6 +76,25 @@ final class RequestFileWriterTest extends UnitTestCase
     }
 
     #[Test]
+    public function resolvesSymlinkedVendorPathsToTheRealRoot(): void
+    {
+        $base = sys_get_temp_dir() . '/frr-' . bin2hex(random_bytes(4));
+        mkdir($base . '/local/ext/Resources', 0777, true);
+        file_put_contents($base . '/local/ext/Resources/X.html', 'x');
+        mkdir($base . '/vendor/v', 0777, true);
+        symlink($base . '/local/ext', $base . '/vendor/v/ext');
+
+        $recorder = new RecorderContext();
+        $recorder->activate('k', 'run-1');
+        $recorder->recordFile($base . '/vendor/v/ext/Resources/X.html');
+
+        $file = (new RequestFileWriter())->write($recorder, $base . '/out', $base, ['local/']);
+
+        $body = json_decode((string)file_get_contents($file), true);
+        self::assertSame(['local/ext/Resources/X.html'], $body['files']);
+    }
+
+    #[Test]
     public function filtersFilesToConfiguredRoots(): void
     {
         $outputDir = sys_get_temp_dir() . '/far-' . bin2hex(random_bytes(4));
