@@ -4,7 +4,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 
-export interface FluidRenderGraphOptions {
+export interface RenderGraphOptions {
     projectRoot?: string
     roots?: string[]
     outFile?: string
@@ -15,10 +15,10 @@ export interface FluidRenderGraphOptions {
  * Emits, at build time, a JSON map of each Vite entry to the project source files
  * (`.ts`/`.js` transitively via the Rollup module graph, plus every `.scss` and its
  * `@use`/`@import` partials via sass) it is built from — filtered to the configured
- * roots. Consumed together with the Fluid Render Recorder's per-request `assets`
+ * roots. Consumed together with the Render Dependency Recorder's per-request `assets`
  * to resolve a changed source module to the tests whose pages loaded its entry.
  */
-export function fluidRenderGraph(options: FluidRenderGraphOptions = {}): Plugin {
+export function renderGraph(options: RenderGraphOptions = {}): Plugin {
     const projectRoot = `${(options.projectRoot ?? process.cwd()).replace(/\/+$/, '')}/`
     const roots = options.roots ?? ['source/', 'local/']
     const outFile = options.outFile ?? resolve(projectRoot, 'test/playwright/render-graph.json')
@@ -51,7 +51,7 @@ export function fluidRenderGraph(options: FluidRenderGraphOptions = {}): Plugin 
     }
 
     return {
-        name: 'fluid-render-graph',
+        name: 'render-graph',
         apply: 'build',
         generateBundle(_options, bundle) {
             const chunkFiles: Record<string, Set<string>> = {}

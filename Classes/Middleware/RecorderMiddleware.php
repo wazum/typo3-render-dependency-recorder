@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Middleware;
+namespace Wazum\RenderDependencyRecorder\Middleware;
 
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
@@ -13,8 +13,8 @@ use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Page\AssetCollector;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
-use Wazum\FluidRenderRecorder\Writer\RequestFileWriter;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Writer\RequestFileWriter;
 
 final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterface
 {
@@ -40,7 +40,7 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         }
 
         $request->getAttribute('frontend.cache.instruction')
-            ?->disableCache('EXT:fluid_render_recorder: recording active');
+            ?->disableCache('EXT:render_dependency_recorder: recording active');
 
         $deepActive = strtolower($request->getHeaderLine($this->depthHeader($config))) === 'deep'
             && $this->startCoverage();
@@ -63,7 +63,7 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
                 $this->collectAssets();
                 $this->writer->write(
                     $this->recorder,
-                    Environment::getVarPath() . '/fluid-render-recorder',
+                    Environment::getVarPath() . '/render-dependency-recorder',
                     Environment::getProjectPath(),
                     $this->rootsList($config),
                 );
@@ -168,7 +168,7 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
     private function configuration(): array
     {
         try {
-            $config = $this->extensionConfiguration->get('fluid_render_recorder');
+            $config = $this->extensionConfiguration->get('render_dependency_recorder');
         } catch (\Throwable) {
             return [];
         }

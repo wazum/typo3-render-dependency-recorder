@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Tests\Functional;
+namespace Wazum\RenderDependencyRecorder\Tests\Functional;
 
 use PHPUnit\Framework\Attributes\Test;
 use Psr\Http\Message\ResponseInterface;
@@ -13,17 +13,17 @@ use TYPO3\CMS\Core\Http\ServerRequest;
 use TYPO3\CMS\Core\Page\AssetCollector;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use Wazum\FluidRenderRecorder\Middleware\RecorderMiddleware;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Middleware\RecorderMiddleware;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecorderMiddlewareTest extends FunctionalTestCase
 {
-    protected array $testExtensionsToLoad = ['wazum/typo3-fluid-render-recorder'];
+    protected array $testExtensionsToLoad = ['wazum/typo3-render-dependency-recorder'];
 
     protected function setUp(): void
     {
         parent::setUp();
-        $directory = $this->instancePath . '/typo3temp/var/fluid-render-recorder';
+        $directory = $this->instancePath . '/typo3temp/var/render-dependency-recorder';
         if (is_dir($directory)) {
             GeneralUtility::rmdir($directory, true);
         }
@@ -55,7 +55,7 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
 
         $this->get(RecorderMiddleware::class)->process($request, $handler);
 
-        $dir = $this->instancePath . '/typo3temp/var/fluid-render-recorder/requests/run-7';
+        $dir = $this->instancePath . '/typo3temp/var/render-dependency-recorder/requests/run-7';
         $files = glob($dir . '/*.json') ?: [];
         self::assertCount(1, $files);
         $body = json_decode((string)file_get_contents($files[0]), true);
@@ -83,7 +83,7 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
         $this->get(RecorderMiddleware::class)->process(new ServerRequest('https://example.org/', 'GET'), $handler);
 
         self::assertFalse($recorder->isActive());
-        self::assertDirectoryDoesNotExist($this->instancePath . '/typo3temp/var/fluid-render-recorder/requests');
+        self::assertDirectoryDoesNotExist($this->instancePath . '/typo3temp/var/render-dependency-recorder/requests');
     }
 
     #[Test]
@@ -115,7 +115,7 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
 
         $middleware = new RecorderMiddleware(
             $this->get(RecorderContext::class),
-            $this->get(\Wazum\FluidRenderRecorder\Writer\RequestFileWriter::class),
+            $this->get(\Wazum\RenderDependencyRecorder\Writer\RequestFileWriter::class),
             $this->get(AssetCollector::class),
             $extensionConfiguration,
         );
@@ -153,7 +153,7 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
 
         $this->get(RecorderMiddleware::class)->process($request, $handler);
 
-        $files = glob($this->instancePath . '/typo3temp/var/fluid-render-recorder/requests/run-depth/*.json') ?: [];
+        $files = glob($this->instancePath . '/typo3temp/var/render-dependency-recorder/requests/run-depth/*.json') ?: [];
         self::assertCount(1, $files);
         $body = json_decode((string)file_get_contents($files[0]), true);
         self::assertSame('shallow', $body['depth']);

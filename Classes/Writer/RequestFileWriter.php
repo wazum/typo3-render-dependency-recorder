@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Writer;
+namespace Wazum\RenderDependencyRecorder\Writer;
 
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RequestFileWriter
 {

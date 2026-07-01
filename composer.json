@@ -1,7 +1,7 @@
 {
-  "name": "wazum/typo3-fluid-render-recorder",
+  "name": "wazum/typo3-render-dependency-recorder",
   "type": "typo3-cms-extension",
-  "description": "Records the Fluid templates and Vite asset entries a request renders, keyed by an opaque header value.",
+  "description": "Records the templates, executed PHP, and asset entries a request renders, keyed by an opaque header value.",
   "license": "GPL-2.0-or-later",
   "authors": [
     { "name": "Wolfgang Klinger", "email": "wolfgang@wazum.com" }
@@ -13,12 +13,12 @@
     "typo3/cms-frontend": "^13.4"
   },
   "autoload": {
-    "psr-4": { "Wazum\\FluidRenderRecorder\\": "Classes" }
+    "psr-4": { "Wazum\\RenderDependencyRecorder\\": "Classes" }
   },
   "autoload-dev": {
-    "psr-4": { "Wazum\\FluidRenderRecorder\\Tests\\": "Tests" }
+    "psr-4": { "Wazum\\RenderDependencyRecorder\\Tests\\": "Tests" }
   },
   "extra": {
-    "typo3/cms": { "extension-key": "fluid_render_recorder" }
+    "typo3/cms": { "extension-key": "render_dependency_recorder" }
   }
 }

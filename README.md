@@ -1,4 +1,4 @@
-# Fluid Render Recorder for TYPO3 CMS
+# Render Dependency Recorder for TYPO3 CMS
 
 [![Supported TYPO3](https://img.shields.io/badge/TYPO3-13.4-orange.svg)](https://get.typo3.org/)
 [![Supported PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4-blue.svg)](https://www.php.net/)
@@ -52,11 +52,11 @@ For every recorded request, filtered to your configured project roots (e.g. `sou
 ## Installation
 
 ```bash
-composer require --dev wazum/typo3-fluid-render-recorder
+composer require --dev wazum/typo3-render-dependency-recorder
 ```
 
 ```bash
-vendor/bin/typo3 extension:setup --extension=fluid_render_recorder
+vendor/bin/typo3 extension:setup --extension=render_dependency_recorder
 ```
 
 Installing it as a dev dependency means a production build (`composer install --no-dev`) omits it entirely — a second line of defence on top of the context gate.
@@ -90,13 +90,13 @@ Coverage records *executed* files (not merely loaded), so it is immune to autolo
 Deep capture needs the FPM worker started with `xdebug.mode=coverage`, which can't be toggled per request. A small **DDEV add-on ships with this extension** to make that a one-liner. Install it from the local package path (no public repo needed):
 
 ```bash
-ddev add-on get vendor/wazum/typo3-fluid-render-recorder/Resources/Private/DdevAddon
+ddev add-on get vendor/wazum/typo3-render-dependency-recorder/Resources/Private/DdevAddon
 ```
 
 Then record a page deeply with a single, self-restoring command:
 
 ```bash
-ddev fluid-record https://your-project.ddev.site/ home run-1
+ddev render-record https://your-project.ddev.site/ home run-1
 ```
 
 It enables Xdebug, flips FPM to coverage mode via `supervisorctl restart php-fpm` (~1s, not a full `ddev restart`), sends the record/run/`deep` headers, and restores the environment afterwards — even on failure. Developers never touch Xdebug config.
@@ -106,7 +106,7 @@ It enables Xdebug, flips FPM to coverage mode via `supervisorctl restart php-fpm
 Each recorded request writes one randomly-named file under:
 
 ```
-var/fluid-render-recorder/requests/<runId>/<random>.json
+var/render-dependency-recorder/requests/<runId>/<random>.json
 ```
 
 ```json
@@ -131,7 +131,7 @@ Filenames are random (never derived from the key), so concurrent requests never 
 
 ## Configuration
 
-Extension Configuration (Admin Tools → Settings, or `EXTENSIONS/fluid_render_recorder` in `settings.php`):
+Extension Configuration (Admin Tools → Settings, or `EXTENSIONS/render_dependency_recorder` in `settings.php`):
 
 | Key | Default | Description |
 | --- | --- | --- |
@@ -155,8 +155,8 @@ Fluid renders `<c:…>` components through each component collection's *own* `Te
 ```php
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3Fluid\Fluid\View\TemplatePaths;
-use Wazum\FluidRenderRecorder\Fluid\RecordingTemplatePaths;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Fluid\RecordingTemplatePaths;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 public function getTemplatePaths(): TemplatePaths
 {
@@ -181,7 +181,7 @@ Assets registered with an entry-recoverable identifier (Vite) or a repo-relative
 
 ```php
 use TYPO3\CMS\Core\Utility\GeneralUtility;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 if (
     class_exists(RecorderContext::class)

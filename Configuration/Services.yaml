@@ -4,20 +4,20 @@ services:
     autoconfigure: true
     public: false
 
-  Wazum\FluidRenderRecorder\:
+  Wazum\RenderDependencyRecorder\:
     resource: '../Classes/*'
 
-  Wazum\FluidRenderRecorder\Recorder\RecorderContext:
+  Wazum\RenderDependencyRecorder\Recorder\RecorderContext:
     public: true
 
-  Wazum\FluidRenderRecorder\Middleware\RecorderMiddleware:
+  Wazum\RenderDependencyRecorder\Middleware\RecorderMiddleware:
     public: true
 
-  Wazum\FluidRenderRecorder\Writer\RequestFileWriter:
+  Wazum\RenderDependencyRecorder\Writer\RequestFileWriter:
     public: true
 
-  Wazum\FluidRenderRecorder\View\RecordingViewFactory:
+  Wazum\RenderDependencyRecorder\View\RecordingViewFactory:
     decorates: TYPO3\CMS\Core\View\ViewFactoryInterface
     arguments:
-      $inner: '@Wazum\FluidRenderRecorder\View\RecordingViewFactory.inner'
-      $recorder: '@Wazum\FluidRenderRecorder\Recorder\RecorderContext'
+      $inner: '@Wazum\RenderDependencyRecorder\View\RecordingViewFactory.inner'
+      $recorder: '@Wazum\RenderDependencyRecorder\Recorder\RecorderContext'

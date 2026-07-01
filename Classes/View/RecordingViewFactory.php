@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\View;
+namespace Wazum\RenderDependencyRecorder\View;
 
 use TYPO3\CMS\Core\View\ViewFactoryData;
 use TYPO3\CMS\Core\View\ViewFactoryInterface;
@@ -12,8 +12,8 @@ use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContext as FluidRenderingContext;
 use TYPO3Fluid\Fluid\Core\Rendering\RenderingContextInterface;
-use Wazum\FluidRenderRecorder\Fluid\RecordingTemplatePaths;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Fluid\RecordingTemplatePaths;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecordingViewFactory implements ViewFactoryInterface, LoggerAwareInterface
 {

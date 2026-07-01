@@ -6,10 +6,10 @@ import { fileURLToPath } from 'node:url';
  * Emits, at build time, a JSON map of each Vite entry to the project source files
  * (`.ts`/`.js` transitively via the Rollup module graph, plus every `.scss` and its
  * `@use`/`@import` partials via sass) it is built from — filtered to the configured
- * roots. Consumed together with the Fluid Render Recorder's per-request `assets`
+ * roots. Consumed together with the Render Dependency Recorder's per-request `assets`
  * to resolve a changed source module to the tests whose pages loaded its entry.
  */
-export function fluidRenderGraph(options = {}) {
+export function renderGraph(options = {}) {
     const projectRoot = `${(options.projectRoot ?? process.cwd()).replace(/\/+$/, '')}/`;
     const roots = options.roots ?? ['source/', 'local/'];
     const outFile = options.outFile ?? resolve(projectRoot, 'test/playwright/render-graph.json');
@@ -40,7 +40,7 @@ export function fluidRenderGraph(options = {}) {
         return deps;
     };
     return {
-        name: 'fluid-render-graph',
+        name: 'render-graph',
         apply: 'build',
         generateBundle(_options, bundle) {
             const chunkFiles = {};

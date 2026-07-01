@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Tests\Unit\Recorder;
+namespace Wazum\RenderDependencyRecorder\Tests\Unit\Recorder;
 
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecorderContextTest extends UnitTestCase
 {

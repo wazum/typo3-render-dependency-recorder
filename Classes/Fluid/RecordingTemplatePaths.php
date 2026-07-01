@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Fluid;
+namespace Wazum\RenderDependencyRecorder\Fluid;
 
 use TYPO3\CMS\Fluid\View\TemplatePaths;
 use TYPO3Fluid\Fluid\View\TemplatePaths as FluidTemplatePaths;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecordingTemplatePaths extends TemplatePaths
 {

@@ -2,18 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Tests\Functional;
+namespace Wazum\RenderDependencyRecorder\Tests\Functional;
 
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Core\View\ViewFactoryData;
 use TYPO3\CMS\Core\View\ViewFactoryInterface;
 use TYPO3\CMS\Fluid\View\FluidViewAdapter;
 use TYPO3\TestingFramework\Core\Functional\FunctionalTestCase;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecordingViewFactoryTest extends FunctionalTestCase
 {
-    protected array $testExtensionsToLoad = ['wazum/typo3-fluid-render-recorder'];
+    protected array $testExtensionsToLoad = ['wazum/typo3-render-dependency-recorder'];
 
     #[Test]
     public function recordsTheRenderedTemplateFileWhenActive(): void

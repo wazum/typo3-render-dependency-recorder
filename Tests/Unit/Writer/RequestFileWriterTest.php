@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Tests\Unit\Writer;
+namespace Wazum\RenderDependencyRecorder\Tests\Unit\Writer;
 
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
-use Wazum\FluidRenderRecorder\Writer\RequestFileWriter;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Writer\RequestFileWriter;
 
 final class RequestFileWriterTest extends UnitTestCase
 {

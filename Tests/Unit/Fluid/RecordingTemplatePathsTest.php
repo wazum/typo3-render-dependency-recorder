@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Wazum\FluidRenderRecorder\Tests\Unit\Fluid;
+namespace Wazum\RenderDependencyRecorder\Tests\Unit\Fluid;
 
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\CMS\Fluid\View\TemplatePaths;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 use TYPO3Fluid\Fluid\View\TemplatePaths as FluidTemplatePaths;
-use Wazum\FluidRenderRecorder\Fluid\RecordingTemplatePaths;
-use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
+use Wazum\RenderDependencyRecorder\Fluid\RecordingTemplatePaths;
+use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecordingTemplatePathsTest extends UnitTestCase
 {

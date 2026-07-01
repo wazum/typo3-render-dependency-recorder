@@ -1,7 +1,7 @@
-name: fluid-render-recorder
+name: render-dependency-recorder
 
 project_files:
-  - commands/host/fluid-record
+  - commands/host/render-record
 
 post_install_actions:
-  - echo "fluid-render-recorder add-on installed. Run 'ddev fluid-record <url>' for a deep (Xdebug coverage) record."
+  - echo "render-dependency-recorder add-on installed. Run 'ddev render-record <url>' for a deep (Xdebug coverage) record."

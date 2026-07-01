@@ -1,8 +1,8 @@
 <?php
 
 $EM_CONF[$_EXTKEY] = [
-    'title' => 'Fluid Render Recorder',
-    'description' => 'Records the Fluid templates and Vite asset entries a request renders, keyed by an opaque header value.',
+    'title' => 'Render Dependency Recorder',
+    'description' => 'Records the templates, executed PHP, and asset entries a request renders, keyed by an opaque header value.',
     'category' => 'misc',
     'author' => 'Wolfgang Klinger',
     'author_email' => 'wolfgang@wazum.com',

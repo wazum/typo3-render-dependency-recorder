@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 
-## Description: Deep-record Fluid render dependencies (Xdebug coverage) for a URL
-## Usage: fluid-record <url> [recordKey] [runId]
-## Example: "ddev fluid-record https://mysite.ddev.site/ home run-1"
+## Description: Deep-record render dependencies (templates + executed PHP via Xdebug coverage) for a URL
+## Usage: render-record <url> [recordKey] [runId]
+## Example: "ddev render-record https://mysite.ddev.site/ home run-1"
 
 set -eu
 
 URL="${1:-}"
 if [ -z "${URL}" ]; then
-    echo "Usage: ddev fluid-record <url> [recordKey] [runId]" >&2
+    echo "Usage: ddev render-record <url> [recordKey] [runId]" >&2
     exit 1
 fi
 KEY="${2:-$(basename "${URL}")}"
 RUN_ID="${3:-run-$(date +%s)}"
 
 PHP_VERSION="$(ddev exec 'php -r "echo PHP_MAJOR_VERSION.\".\".PHP_MINOR_VERSION;"')"
-COVERAGE_INI="/etc/php/${PHP_VERSION}/fpm/conf.d/zzz-fluid-render-coverage.ini"
+COVERAGE_INI="/etc/php/${PHP_VERSION}/fpm/conf.d/zzz-render-dependency-coverage.ini"
 
 restore() {
     ddev exec "sudo rm -f ${COVERAGE_INI} && sudo supervisorctl restart php-fpm" >/dev/null 2>&1 || true
@@ -23,16 +23,16 @@ restore() {
 }
 trap restore EXIT
 
-echo "[fluid-record] enabling Xdebug coverage on php-fpm (${PHP_VERSION})…"
+echo "[render-record] enabling Xdebug coverage on php-fpm (${PHP_VERSION})…"
 ddev xdebug on >/dev/null
 ddev exec "echo 'xdebug.mode=coverage' | sudo tee ${COVERAGE_INI} >/dev/null && sudo supervisorctl restart php-fpm" >/dev/null
 
-echo "[fluid-record] recording ${URL} (key=${KEY}, run=${RUN_ID})…"
+echo "[render-record] recording ${URL} (key=${KEY}, run=${RUN_ID})…"
 STATUS="$(curl -sk \
     -H "X-Render-Record: ${KEY}" \
     -H "X-Render-Run: ${RUN_ID}" \
     -H "X-Render-Depth: deep" \
     "${URL}" -o /dev/null -w '%{http_code}')"
-echo "[fluid-record] HTTP ${STATUS}"
+echo "[render-record] HTTP ${STATUS}"
 
-echo "[fluid-record] per-request files written under var/fluid-render-recorder/requests/${RUN_ID}/"
+echo "[render-record] per-request files written under var/render-dependency-recorder/requests/${RUN_ID}/"
