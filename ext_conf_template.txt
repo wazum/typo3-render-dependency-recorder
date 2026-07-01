@@ -1,0 +1,8 @@
+# cat=recorder; type=string; label=Record header name
+recordHeader = X-Render-Record
+
+# cat=recorder; type=string; label=Run id header name
+runHeader = X-Render-Run
+
+# cat=recorder; type=string; label=Comma-separated application contexts in which recording is allowed (prefix match)
+activeContexts = Testing
