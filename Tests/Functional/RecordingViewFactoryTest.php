@@ -46,4 +46,24 @@ final class RecordingViewFactoryTest extends FunctionalTestCase
 
         self::assertSame([], $recorder->templates());
     }
+
+    #[Test]
+    public function recordsEvenWhenTheCompileCacheIsWarm(): void
+    {
+        $fixtures = __DIR__ . '/Fixtures/Templates';
+        $recorder = $this->get(RecorderContext::class);
+
+        $this->get(ViewFactoryInterface::class)->create(new ViewFactoryData(
+            templateRootPaths: [$fixtures],
+            templatePathAndFilename: $fixtures . '/Page.html',
+        ))->render();
+
+        $recorder->activate('demo', 'run-warm');
+        $this->get(ViewFactoryInterface::class)->create(new ViewFactoryData(
+            templateRootPaths: [$fixtures],
+            templatePathAndFilename: $fixtures . '/Page.html',
+        ))->render();
+
+        self::assertContains($fixtures . '/Page.html', $recorder->templates());
+    }
 }

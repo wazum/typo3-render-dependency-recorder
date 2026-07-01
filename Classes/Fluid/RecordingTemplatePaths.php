@@ -10,6 +10,8 @@ use Wazum\FluidRenderRecorder\Recorder\RecorderContext;
 
 final class RecordingTemplatePaths extends TemplatePaths
 {
+    private const IDENTIFIER_SUFFIX = '_fluidrenderrecorder';
+
     private ?RecorderContext $recorder = null;
 
     public static function fromExisting(FluidTemplatePaths $source, RecorderContext $recorder): self
@@ -22,6 +24,21 @@ final class RecordingTemplatePaths extends TemplatePaths
         $instance->recorder = $recorder;
 
         return $instance;
+    }
+
+    public function getTemplateIdentifier(?string $controller = 'Default', ?string $action = 'Default'): string
+    {
+        return parent::getTemplateIdentifier($controller, $action) . self::IDENTIFIER_SUFFIX;
+    }
+
+    public function getPartialIdentifier(string $partialName): string
+    {
+        return parent::getPartialIdentifier($partialName) . self::IDENTIFIER_SUFFIX;
+    }
+
+    public function getLayoutIdentifier(string $layoutName = 'Default'): string
+    {
+        return parent::getLayoutIdentifier($layoutName) . self::IDENTIFIER_SUFFIX;
     }
 
     public function getTemplateSource($controller = 'Default', $action = 'Default')
