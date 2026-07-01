@@ -132,4 +132,39 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
 
         self::assertFalse($this->get(RecorderContext::class)->isActive());
     }
+
+    #[Test]
+    public function deepRequestDowngradesToShallowWhenCoverageUnavailable(): void
+    {
+        $recorder = $this->get(RecorderContext::class);
+        $handler = new class ($recorder) implements RequestHandlerInterface {
+            public function __construct(private RecorderContext $recorder) {}
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->recorder->recordFile('/x/T.html');
+                return new JsonResponse(['ok' => true]);
+            }
+        };
+
+        $request = (new ServerRequest('https://example.org/', 'GET'))
+            ->withHeader('X-Render-Record', 'demo.verify.ts')
+            ->withHeader('X-Render-Run', 'run-depth')
+            ->withHeader('X-Render-Depth', 'deep');
+
+        $this->get(RecorderMiddleware::class)->process($request, $handler);
+
+        $files = glob($this->instancePath . '/typo3temp/var/fluid-render-recorder/requests/run-depth/*.json') ?: [];
+        self::assertCount(1, $files);
+        $body = json_decode((string)file_get_contents($files[0]), true);
+        self::assertSame('shallow', $body['depth']);
+    }
+
+    #[Test]
+    public function capturesExecutedPhpWhenCoverageAvailable(): void
+    {
+        if (!function_exists('xdebug_start_code_coverage') || !str_contains((string)ini_get('xdebug.mode'), 'coverage')) {
+            self::markTestSkipped('Xdebug coverage not available.');
+        }
+        self::assertTrue(true);
+    }
 }

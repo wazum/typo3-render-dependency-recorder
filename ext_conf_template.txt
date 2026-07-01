@@ -9,3 +9,6 @@ activeContexts = Testing
 
 # cat=recorder; type=string; label=Comma-separated project roots captured paths are filtered to (repo-relative prefixes)
 roots = source/,local/
+
+# cat=recorder; type=string; label=Header that requests deep (executed-PHP) capture when its value is "deep"
+depthHeader = X-Render-Depth

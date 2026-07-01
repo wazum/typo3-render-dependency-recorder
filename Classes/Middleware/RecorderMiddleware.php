@@ -42,13 +42,27 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         $request->getAttribute('frontend.cache.instruction')
             ?->disableCache('EXT:fluid_render_recorder: recording active');
 
+        $requestedDeep = strtolower($request->getHeaderLine($this->depthHeader($config))) === 'deep';
+        $depth = $requestedDeep && $this->coverageAvailable() ? 'deep' : 'shallow';
+
         $runId = $request->getHeaderLine($this->runHeader($config));
-        $this->recorder->activate($key, $runId !== '' ? $runId : 'default');
+        $this->recorder->activate($key, $runId !== '' ? $runId : 'default', $depth);
+
+        if ($depth === 'deep') {
+            \xdebug_start_code_coverage();
+        }
 
         try {
             return $handler->handle($request);
         } finally {
             try {
+                if ($depth === 'deep') {
+                    $coverage = \xdebug_get_code_coverage();
+                    \xdebug_stop_code_coverage();
+                    foreach (array_keys($coverage) as $executedFile) {
+                        $this->recorder->recordFile((string)$executedFile);
+                    }
+                }
                 $this->collectAssets();
                 $this->writer->write(
                     $this->recorder,
@@ -62,6 +76,14 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
                 $this->recorder->deactivate();
             }
         }
+    }
+
+    private function coverageAvailable(): bool
+    {
+        return function_exists('xdebug_start_code_coverage')
+            && function_exists('xdebug_get_code_coverage')
+            && function_exists('xdebug_stop_code_coverage')
+            && str_contains((string)ini_get('xdebug.mode'), 'coverage');
     }
 
     private function contextAllowed(array $config): bool
@@ -158,6 +180,14 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         return is_string($config['runHeader'] ?? null) && $config['runHeader'] !== ''
             ? $config['runHeader']
             : 'X-Render-Run';
+    }
+
+    /** @param array<string, mixed> $config */
+    private function depthHeader(array $config): string
+    {
+        return is_string($config['depthHeader'] ?? null) && $config['depthHeader'] !== ''
+            ? $config['depthHeader']
+            : 'X-Render-Depth';
     }
 
     /**
