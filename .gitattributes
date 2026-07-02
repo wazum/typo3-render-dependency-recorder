@@ -16,6 +16,9 @@
 # Vite plugin sources (compiled plugin ships in Resources/Private/Vite/dist)
 /Resources/Private/Vite/src export-ignore
 /Resources/Private/Vite/src/** export-ignore
+/Resources/Private/Vite/test export-ignore
+/Resources/Private/Vite/test/** export-ignore
 /Resources/Private/Vite/tsconfig.json export-ignore
+/Resources/Private/Vite/vitest.config.ts export-ignore
 /Resources/Private/Vite/package-lock.json export-ignore
 /Resources/Private/Vite/.gitignore export-ignore

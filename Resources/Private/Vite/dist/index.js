@@ -82,6 +82,7 @@ export function renderGraph(options = {}) {
                     const chunk = bundle[fileName];
                     if (chunk && chunk.type === 'chunk') {
                         chunk.imports.forEach(walk);
+                        chunk.dynamicImports.forEach(walk);
                     }
                 };
                 walk(output.fileName);
