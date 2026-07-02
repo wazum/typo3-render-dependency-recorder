@@ -1,0 +1,21 @@
+# Development environment
+/.github export-ignore
+/.github/** export-ignore
+
+# Tests
+/Tests export-ignore
+/Tests/** export-ignore
+
+# Development config
+/.editorconfig export-ignore
+/.gitattributes export-ignore
+/.gitignore export-ignore
+/.php-cs-fixer.php export-ignore
+/phpstan.neon export-ignore
+
+# Vite plugin sources (compiled plugin ships in Resources/Private/Vite/dist)
+/Resources/Private/Vite/src export-ignore
+/Resources/Private/Vite/src/** export-ignore
+/Resources/Private/Vite/tsconfig.json export-ignore
+/Resources/Private/Vite/package-lock.json export-ignore
+/Resources/Private/Vite/.gitignore export-ignore

@@ -1,0 +1,134 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'fix/*'
+      - 'feature/*'
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: intl
+          tools: composer:2.9
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-quality-${{ runner.os }}-php8.3-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            composer-quality-${{ runner.os }}-php8.3-
+
+      - name: Install dependencies
+        run: composer install --no-interaction
+
+      - name: Run PHPStan
+        run: composer phpstan
+
+      - name: Run PHP CS Fixer
+        run: composer cs:check
+
+  tests:
+    name: Tests (PHP ${{ matrix.php }} - TYPO3 ${{ matrix.typo3 }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # TYPO3 13.4 LTS
+          - php: '8.2'
+            typo3: '13.4'
+          - php: '8.3'
+            typo3: '13.4'
+          - php: '8.4'
+            typo3: '13.4'
+          # TYPO3 14.x
+          - php: '8.2'
+            typo3: '14.3'
+          - php: '8.3'
+            typo3: '14.3'
+          - php: '8.4'
+            typo3: '14.3'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: intl, pdo_sqlite
+          coverage: xdebug
+          tools: composer:2.9
+        env:
+          XDEBUG_MODE: coverage
+
+      - name: Cache Composer downloads
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ runner.os }}-php${{ matrix.php }}-typo3${{ matrix.typo3 }}-${{ hashFiles('composer.json') }}
+          restore-keys: |
+            composer-${{ runner.os }}-php${{ matrix.php }}-typo3${{ matrix.typo3 }}-
+            composer-${{ runner.os }}-php${{ matrix.php }}-
+
+      - name: Install dependencies
+        run: |
+          composer require "typo3/cms-core:^${{ matrix.typo3 }}" "typo3/cms-fluid:^${{ matrix.typo3 }}" "typo3/cms-frontend:^${{ matrix.typo3 }}" --no-update --no-interaction
+          composer install --no-interaction
+
+      - name: Run unit tests
+        run: composer test:unit
+
+      - name: Run functional tests
+        run: composer test:functional
+
+  vite-plugin:
+    name: Vite Plugin Build Up-to-date
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: Resources/Private/Vite
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: Resources/Private/Vite/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build plugin
+        run: npm run build
+
+      - name: Fail if dist is out of date
+        run: |
+          if [ -n "$(git status --porcelain -- dist)" ]; then
+            echo "::error::Built plugin in Resources/Private/Vite/dist differs from the committed sources. Run 'npm run build' and commit the result."
+            git status --porcelain -- dist
+            git diff -- dist
+            exit 1
+          fi
+          echo "dist is up to date with src/."
