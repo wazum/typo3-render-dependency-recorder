@@ -138,6 +138,63 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function subrequestDuringActiveRecordingAccruesToTheOuterRecording(): void
+    {
+        $recorder = $this->get(RecorderContext::class);
+        $middleware = $this->get(RecorderMiddleware::class);
+
+        $innerHandler = new class($recorder) implements RequestHandlerInterface {
+            public function __construct(private RecorderContext $recorder)
+            {
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->recorder->recordAssetEntry('inner.ts');
+
+                return new JsonResponse(['ok' => true]);
+            }
+        };
+
+        $subRequestInstruction = new \TYPO3\CMS\Frontend\Cache\CacheInstruction();
+        $subRequest = (new ServerRequest('https://example.org/404', 'GET'))
+            ->withAttribute('frontend.cache.instruction', $subRequestInstruction)
+            ->withHeader('X-Render-Record', 'outer')
+            ->withHeader('X-Render-Run', 'run-sub');
+
+        $outerHandler = new class($recorder, $middleware, $subRequest, $innerHandler) implements RequestHandlerInterface {
+            public function __construct(
+                private RecorderContext $recorder,
+                private RecorderMiddleware $middleware,
+                private ServerRequestInterface $subRequest,
+                private RequestHandlerInterface $innerHandler,
+            ) {
+            }
+
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                $this->recorder->recordAssetEntry('outer.ts');
+
+                return $this->middleware->process($this->subRequest, $this->innerHandler);
+            }
+        };
+
+        $request = (new ServerRequest('https://example.org/', 'GET'))
+            ->withHeader('X-Render-Record', 'outer')
+            ->withHeader('X-Render-Run', 'run-sub');
+
+        $middleware->process($request, $outerHandler);
+
+        $files = glob($this->instancePath . '/typo3temp/var/render-dependency-recorder/requests/run-sub/*.json') ?: [];
+        self::assertCount(1, $files);
+        $body = json_decode((string)file_get_contents($files[0]), true);
+        self::assertSame('outer', $body['key']);
+        self::assertSame(['inner.ts', 'outer.ts'], $body['assets']);
+        self::assertFalse($subRequestInstruction->isCachingAllowed());
+        self::assertFalse($recorder->isActive());
+    }
+
+    #[Test]
     public function writesToConfiguredOutputDirectoryRelativeToProjectRoot(): void
     {
         $extensionConfiguration = $this->createStub(\TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class);

@@ -44,6 +44,13 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         $request->getAttribute('frontend.cache.instruction')
             ?->disableCache('EXT:render_dependency_recorder: recording active');
 
+        // A subrequest during an active recording (e.g. an error-page render carrying
+        // the original headers) must accrue to the outer recording; only the outermost
+        // pass activates and writes.
+        if ($this->recorder->isActive()) {
+            return $handler->handle($request);
+        }
+
         $deepActive = strtolower($request->getHeaderLine($this->depthHeader($config))) === 'deep'
             && $this->startCoverage();
         $depth = $deepActive ? 'deep' : 'shallow';
