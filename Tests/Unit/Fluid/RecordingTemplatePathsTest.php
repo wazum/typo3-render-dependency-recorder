@@ -13,6 +13,8 @@ use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecordingTemplatePathsTest extends UnitTestCase
 {
+    protected bool $resetSingletonInstances = true;
+
     #[Test]
     public function recordsResolvedTemplateFilePath(): void
     {
