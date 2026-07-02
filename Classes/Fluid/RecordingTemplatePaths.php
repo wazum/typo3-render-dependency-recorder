@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace Wazum\RenderDependencyRecorder\Fluid;
 
+use ReflectionObject;
+use Throwable;
 use TYPO3\CMS\Fluid\View\TemplatePaths;
 use TYPO3Fluid\Fluid\View\TemplatePaths as FluidTemplatePaths;
 use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 final class RecordingTemplatePaths extends TemplatePaths
 {
-    private const IDENTIFIER_SUFFIX = '_fluidrenderrecorder';
+    private const IDENTIFIER_SUFFIX = '_renderdependencyrecorder';
 
     private ?RecorderContext $recorder = null;
 
     public static function fromExisting(FluidTemplatePaths $source, RecorderContext $recorder): self
     {
         $instance = new self();
-        $reflection = new \ReflectionObject($source);
+        $reflection = new ReflectionObject($source);
         foreach ($reflection->getProperties() as $property) {
             $property->setValue($instance, $property->getValue($source));
         }
@@ -41,6 +43,10 @@ final class RecordingTemplatePaths extends TemplatePaths
         return parent::getLayoutIdentifier($layoutName) . self::IDENTIFIER_SUFFIX;
     }
 
+    /**
+     * @param string|null $controller
+     * @param string|null $action
+     */
     public function getTemplateSource($controller = 'Default', $action = 'Default')
     {
         $this->record(fn (): ?string => $this->resolveTemplateFileForControllerAndActionAndFormat(
@@ -72,7 +78,7 @@ final class RecordingTemplatePaths extends TemplatePaths
         }
         try {
             $path = $resolver();
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return;
         }
         if (is_string($path) && $path !== '' && is_file($path)) {
