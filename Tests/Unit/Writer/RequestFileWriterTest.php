@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Wazum\RenderDependencyRecorder\Tests\Unit\Writer;
 
+use JsonException;
 use PHPUnit\Framework\Attributes\Test;
 use TYPO3\TestingFramework\Core\Unit\UnitTestCase;
 use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
@@ -57,7 +58,7 @@ final class RequestFileWriterTest extends UnitTestCase
         $recorder->activate("\xB1\x31", 'run-x');
         $recorder->recordFile('/project/x/T.html');
 
-        $this->expectException(\JsonException::class);
+        $this->expectException(JsonException::class);
         (new RequestFileWriter())->write($recorder, $outputDir, '/project');
     }
 

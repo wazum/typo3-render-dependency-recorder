@@ -16,10 +16,14 @@ final class RecorderContext implements SingletonInterface
 
     private string $depth = '';
 
-    /** @var array<string, true> */
+    /**
+     * @var array<string, true>
+     */
     private array $files = [];
 
-    /** @var array<string, true> */
+    /**
+     * @var array<string, true>
+     */
     private array $assets = [];
 
     public function activate(string $key, string $runId, string $depth = 'shallow'): void
@@ -78,19 +82,25 @@ final class RecorderContext implements SingletonInterface
         $this->assets[$entry] = true;
     }
 
-    /** @return array<string> */
+    /**
+     * @return array<string>
+     */
     public function files(): array
     {
         $paths = array_keys($this->files);
         sort($paths);
+
         return $paths;
     }
 
-    /** @return array<string> */
+    /**
+     * @return array<string>
+     */
     public function assets(): array
     {
         $entries = array_keys($this->assets);
         sort($entries);
+
         return $entries;
     }
 }

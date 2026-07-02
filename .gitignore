@@ -1,4 +1,10 @@
 /vendor/
+/public/
+/packages/
+/var/
+composer.lock
+/.php-cs-fixer.cache
 /.phpunit.cache/
 /.phpunit.result.cache
-composer.lock
+/Tests/.phpunit.cache/
+/node_modules/
