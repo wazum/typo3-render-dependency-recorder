@@ -47,6 +47,43 @@ final class RecordingTemplatePathsTest extends UnitTestCase
     }
 
     #[Test]
+    public function wrapWhenActiveReturnsTheOriginalPathsWhenRecorderIsInactive(): void
+    {
+        $paths = new TemplatePaths();
+
+        self::assertSame($paths, RecordingTemplatePaths::wrapWhenActive($paths));
+    }
+
+    #[Test]
+    public function wrapWhenActiveReturnsRecordingPathsWhenRecorderIsActive(): void
+    {
+        $fixtures = __DIR__ . '/Fixtures';
+        $recorder = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(RecorderContext::class);
+        $recorder->activate('k', 'r');
+
+        $paths = new TemplatePaths();
+        $paths->setTemplateRootPaths([$fixtures . '/Templates']);
+        $paths->setFormat('html');
+
+        $wrapped = RecordingTemplatePaths::wrapWhenActive($paths);
+
+        self::assertInstanceOf(RecordingTemplatePaths::class, $wrapped);
+        $wrapped->getTemplateSource('Default', 'Simple');
+        self::assertContains($fixtures . '/Templates/Default/Simple.html', $recorder->files());
+    }
+
+    #[Test]
+    public function wrapWhenActiveDoesNotWrapTwice(): void
+    {
+        $recorder = \TYPO3\CMS\Core\Utility\GeneralUtility::makeInstance(RecorderContext::class);
+        $recorder->activate('k', 'r');
+
+        $wrapped = RecordingTemplatePaths::wrapWhenActive(new TemplatePaths());
+
+        self::assertSame($wrapped, RecordingTemplatePaths::wrapWhenActive($wrapped));
+    }
+
+    #[Test]
     public function acceptsStandaloneBaseTemplatePathsInstance(): void
     {
         $fixtures = __DIR__ . '/Fixtures';

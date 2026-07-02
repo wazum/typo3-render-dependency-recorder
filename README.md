@@ -174,30 +174,25 @@ Extension Configuration (Admin Tools → Settings, or `EXTENSIONS/render_depende
 
 ## Capturing components (opt-in)
 
-Fluid renders `<c:…>` components through each component collection's *own* `TemplatePaths`, which the component renderer substitutes into the rendering context — so the decorator above cannot see them. To record component files, have your collections return the shipped recording paths when recording is active:
+Fluid renders `<c:…>` components through each component collection's *own* `TemplatePaths`, which the component renderer substitutes into the rendering context — so the decorator above cannot see them. To record component files, have your collections wrap their paths:
 
 ```php
-use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3Fluid\Fluid\View\TemplatePaths;
 use Wazum\RenderDependencyRecorder\Fluid\RecordingTemplatePaths;
-use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
 
 public function getTemplatePaths(): TemplatePaths
 {
     $paths = $this->buildTemplatePaths();
 
-    if (
-        class_exists(RecorderContext::class)
-        && ($recorder = GeneralUtility::makeInstance(RecorderContext::class))->isActive()
-    ) {
-        return RecordingTemplatePaths::fromExisting($paths, $recorder);
+    if (class_exists(RecordingTemplatePaths::class)) {
+        $paths = RecordingTemplatePaths::wrapWhenActive($paths);
     }
 
     return $paths;
 }
 ```
 
-The `class_exists` guard keeps this a no-op when the extension is not installed (e.g. production).
+`wrapWhenActive()` returns the paths unchanged unless a recording is active; the `class_exists` guard keeps the whole thing a no-op when the extension is not installed (e.g. production).
 
 > [!WARNING]
 > If you cache the built `TemplatePaths`, cache the active and inactive variants separately so an inactive lookup cannot poison a later recording render.

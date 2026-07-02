@@ -6,6 +6,7 @@ namespace Wazum\RenderDependencyRecorder\Fluid;
 
 use ReflectionObject;
 use Throwable;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\View\TemplatePaths;
 use TYPO3Fluid\Fluid\View\TemplatePaths as FluidTemplatePaths;
 use Wazum\RenderDependencyRecorder\Recorder\RecorderContext;
@@ -15,6 +16,26 @@ final class RecordingTemplatePaths extends TemplatePaths
     private const IDENTIFIER_SUFFIX = '_renderdependencyrecorder';
 
     private ?RecorderContext $recorder = null;
+
+    /**
+     * One-line opt-in for template paths built outside the decorated view factory
+     * (e.g. component collections): returns the given paths unchanged unless a
+     * recording is active. Callers outside this extension should guard the call
+     * with class_exists(RecordingTemplatePaths::class).
+     */
+    public static function wrapWhenActive(FluidTemplatePaths $paths): FluidTemplatePaths
+    {
+        if ($paths instanceof self) {
+            return $paths;
+        }
+
+        $recorder = GeneralUtility::makeInstance(RecorderContext::class);
+        if (!$recorder->isActive()) {
+            return $paths;
+        }
+
+        return self::fromExisting($paths, $recorder);
+    }
 
     public static function fromExisting(FluidTemplatePaths $source, RecorderContext $recorder): self
     {
