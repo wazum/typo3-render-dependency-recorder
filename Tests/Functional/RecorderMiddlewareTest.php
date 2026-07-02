@@ -33,8 +33,11 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
     public function writesPerRequestFileWithTopLevelViteEntriesWhenHeaderPresent(): void
     {
         $recorder = $this->get(RecorderContext::class);
-        $handler = new class ($recorder) implements RequestHandlerInterface {
-            public function __construct(private RecorderContext $recorder) {}
+        $handler = new class($recorder) implements RequestHandlerInterface {
+            public function __construct(private RecorderContext $recorder)
+            {
+            }
+
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 $this->recorder->recordFile('/x/T.html');
@@ -45,6 +48,7 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
                 $assets->addStyleSheet('cdn', 'https://cdn.example.com/x.css');
                 $assets->addInlineStyleSheet('vite:source/critical.ts', '.a{}');
                 $assets->addInlineStyleSheet('a1b2c3d4e5f6', '.crit{}');
+
                 return new JsonResponse(['ok' => true]);
             }
         };
@@ -134,14 +138,53 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
     }
 
     #[Test]
+    public function writesToConfiguredOutputDirectoryRelativeToProjectRoot(): void
+    {
+        $extensionConfiguration = $this->createStub(\TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class);
+        $extensionConfiguration->method('get')->willReturn(['outputDirectory' => 'custom-recordings']);
+
+        $middleware = new RecorderMiddleware(
+            $this->get(RecorderContext::class),
+            $this->get(\Wazum\RenderDependencyRecorder\Writer\RequestFileWriter::class),
+            $this->get(AssetCollector::class),
+            $extensionConfiguration,
+        );
+
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                return new JsonResponse(['ok' => true]);
+            }
+        };
+
+        $request = (new ServerRequest('https://example.org/', 'GET'))
+            ->withHeader('X-Render-Record', 'demo')
+            ->withHeader('X-Render-Run', 'run-custom');
+        $middleware->process($request, $handler);
+
+        $directory = \TYPO3\CMS\Core\Core\Environment::getProjectPath() . '/custom-recordings';
+        $files = glob($directory . '/requests/run-custom/*.json') ?: [];
+        self::assertCount(1, $files);
+        GeneralUtility::rmdir($directory, true);
+    }
+
+    #[Test]
     public function deepRequestDowngradesToShallowWhenCoverageUnavailable(): void
     {
+        if ($this->coverageAvailable()) {
+            self::markTestSkipped('Xdebug coverage is active; the downgrade path cannot occur.');
+        }
+
         $recorder = $this->get(RecorderContext::class);
-        $handler = new class ($recorder) implements RequestHandlerInterface {
-            public function __construct(private RecorderContext $recorder) {}
+        $handler = new class($recorder) implements RequestHandlerInterface {
+            public function __construct(private RecorderContext $recorder)
+            {
+            }
+
             public function handle(ServerRequestInterface $request): ResponseInterface
             {
                 $this->recorder->recordFile('/x/T.html');
+
                 return new JsonResponse(['ok' => true]);
             }
         };
@@ -162,9 +205,56 @@ final class RecorderMiddlewareTest extends FunctionalTestCase
     #[Test]
     public function capturesExecutedPhpWhenCoverageAvailable(): void
     {
-        if (!function_exists('xdebug_start_code_coverage') || !str_contains((string)ini_get('xdebug.mode'), 'coverage')) {
+        if (!$this->coverageAvailable()) {
             self::markTestSkipped('Xdebug coverage not available.');
         }
-        self::assertTrue(true);
+
+        $packageRoot = dirname(__DIR__, 2);
+        $extensionConfiguration = $this->createStub(\TYPO3\CMS\Core\Configuration\ExtensionConfiguration::class);
+        $extensionConfiguration->method('get')->willReturn([
+            'projectRoot' => $packageRoot,
+            'roots' => 'Tests/Functional/Fixtures/',
+        ]);
+
+        $middleware = new RecorderMiddleware(
+            $this->get(RecorderContext::class),
+            $this->get(\Wazum\RenderDependencyRecorder\Writer\RequestFileWriter::class),
+            $this->get(AssetCollector::class),
+            $extensionConfiguration,
+        );
+
+        $handler = new class implements RequestHandlerInterface {
+            public function handle(ServerRequestInterface $request): ResponseInterface
+            {
+                require __DIR__ . '/Fixtures/ExecutedFixture.php';
+
+                return new JsonResponse(['ok' => true]);
+            }
+        };
+
+        $request = (new ServerRequest('https://example.org/', 'GET'))
+            ->withHeader('X-Render-Record', 'deep-demo')
+            ->withHeader('X-Render-Run', 'run-deep')
+            ->withHeader('X-Render-Depth', 'deep');
+
+        $middleware->process($request, $handler);
+
+        $files = glob($this->instancePath . '/typo3temp/var/render-dependency-recorder/requests/run-deep/*.json') ?: [];
+        self::assertCount(1, $files);
+        $body = json_decode((string)file_get_contents($files[0]), true);
+        self::assertSame('deep', $body['depth']);
+        self::assertContains('Tests/Functional/Fixtures/ExecutedFixture.php', $body['files']);
+    }
+
+    private function coverageAvailable(): bool
+    {
+        if (!function_exists('xdebug_start_code_coverage')) {
+            return false;
+        }
+        \xdebug_start_code_coverage();
+        $started = \xdebug_code_coverage_started();
+        \xdebug_stop_code_coverage();
+
+        return $started;
     }
 }
