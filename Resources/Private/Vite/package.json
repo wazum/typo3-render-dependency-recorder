@@ -13,7 +13,9 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc"
   },
@@ -22,6 +24,7 @@
     "vite": ">=5"
   },
   "devDependencies": {
+    "@types/node": "^22.20.0",
     "sass": "^1.77",
     "typescript": "^5.4",
     "vite": "^7.0"
