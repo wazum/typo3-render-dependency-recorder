@@ -9,7 +9,7 @@ return [
         'wazum/render-dependency-recorder/recorder' => [
             'target' => RecorderMiddleware::class,
             'after' => [
-                'typo3/cms-frontend/tsfe',
+                'typo3/cms-frontend/page-argument-validator',
             ],
             'before' => [
                 'typo3/cms-frontend/prepare-tsfe-rendering',
