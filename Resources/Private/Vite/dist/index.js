@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
 export function renderGraph(options = {}) {
     const projectRoot = `${(options.projectRoot ?? process.cwd()).replace(/\/+$/, '')}/`;
     const roots = options.roots ?? ['source/', 'local/'];
-    const outFile = options.outFile ?? resolve(projectRoot, 'test/playwright/render-graph.json');
+    const outFile = options.outFile ?? resolve(projectRoot, 'var/render-dependency-recorder/render-graph.json');
     const sassLoadPaths = options.sassLoadPaths ?? [];
     const toRepoRelative = (id) => {
         const path = id.split('?')[0];
