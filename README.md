@@ -61,11 +61,10 @@ For every recorded request, filtered to your configured project roots (e.g. `sou
 
 ```bash
 composer require --dev wazum/typo3-render-dependency-recorder
+vendor/bin/typo3 cache:flush
 ```
 
-```bash
-vendor/bin/typo3 extension:setup --extension=render_dependency_recorder
-```
+The cache flush is only needed if your caches are warm — it lets the DI container pick up the middleware and view-factory decorator. No database schema, no further setup: the extension works entirely with built-in defaults. Optionally run `vendor/bin/typo3 extension:setup --extension=render_dependency_recorder` to write those defaults into `settings.php`, making them editable under Admin Tools → Settings.
 
 > [!TIP]
 > Installing it as a dev dependency means a production build (`composer install --no-dev`) omits it entirely — a second line of defence on top of the context gate.
