@@ -12,3 +12,9 @@ roots = source/,local/
 
 # cat=recorder; type=string; label=Header that requests deep (executed-PHP) capture when its value is "deep"
 depthHeader = X-Render-Depth
+
+# cat=recorder; type=string; label=Directory the per-request files are written to (absolute, or relative to the project root); empty = var/render-dependency-recorder
+outputDirectory =
+
+# cat=recorder; type=string; label=Absolute path recorded file paths are made relative to; empty = the composer project root
+projectRoot =

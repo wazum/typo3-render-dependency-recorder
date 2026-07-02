@@ -10,6 +10,7 @@ use Psr\Http\Server\MiddlewareInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Throwable;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Core\Environment;
 use TYPO3\CMS\Core\Page\AssetCollector;
@@ -25,7 +26,8 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         private readonly RequestFileWriter $writer,
         private readonly AssetCollector $assetCollector,
         private readonly ExtensionConfiguration $extensionConfiguration,
-    ) {}
+    ) {
+    }
 
     public function process(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
@@ -61,14 +63,15 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
                     }
                 }
                 $this->collectAssets();
+                $projectPath = $this->projectPath($config);
                 $this->writer->write(
                     $this->recorder,
-                    Environment::getVarPath() . '/render-dependency-recorder',
-                    Environment::getProjectPath(),
+                    $this->outputDirectory($config, $projectPath),
+                    $projectPath,
                     $this->rootsList($config),
                 );
-            } catch (\Throwable $exception) {
-                $this->logger?->warning('Fluid render recorder failed to persist a request file', ['exception' => $exception]);
+            } catch (Throwable $exception) {
+                $this->logger?->warning('Render dependency recorder failed to persist a request file', ['exception' => $exception]);
             } finally {
                 $this->recorder->deactivate();
             }
@@ -96,6 +99,9 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         return false;
     }
 
+    /**
+     * @param array<string, mixed> $config
+     */
     private function contextAllowed(array $config): bool
     {
         $raw = is_string($config['activeContexts'] ?? null) && $config['activeContexts'] !== ''
@@ -164,19 +170,23 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
         return str_contains($entry, ':') ? null : $entry;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * @return array<string, mixed>
+     */
     private function configuration(): array
     {
         try {
             $config = $this->extensionConfiguration->get('render_dependency_recorder');
-        } catch (\Throwable) {
+        } catch (Throwable) {
             return [];
         }
 
         return is_array($config) ? $config : [];
     }
 
-    /** @param array<string, mixed> $config */
+    /**
+     * @param array<string, mixed> $config
+     */
     private function recordHeader(array $config): string
     {
         return is_string($config['recordHeader'] ?? null) && $config['recordHeader'] !== ''
@@ -184,7 +194,9 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
             : 'X-Render-Record';
     }
 
-    /** @param array<string, mixed> $config */
+    /**
+     * @param array<string, mixed> $config
+     */
     private function runHeader(array $config): string
     {
         return is_string($config['runHeader'] ?? null) && $config['runHeader'] !== ''
@@ -192,7 +204,9 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
             : 'X-Render-Run';
     }
 
-    /** @param array<string, mixed> $config */
+    /**
+     * @param array<string, mixed> $config
+     */
     private function depthHeader(array $config): string
     {
         return is_string($config['depthHeader'] ?? null) && $config['depthHeader'] !== ''
@@ -202,6 +216,32 @@ final class RecorderMiddleware implements MiddlewareInterface, LoggerAwareInterf
 
     /**
      * @param array<string, mixed> $config
+     */
+    private function projectPath(array $config): string
+    {
+        $raw = is_string($config['projectRoot'] ?? null) ? trim($config['projectRoot']) : '';
+
+        return $raw === '' ? Environment::getProjectPath() : rtrim($raw, '/');
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     */
+    private function outputDirectory(array $config, string $projectPath): string
+    {
+        $raw = is_string($config['outputDirectory'] ?? null) ? trim($config['outputDirectory']) : '';
+        if ($raw === '') {
+            return Environment::getVarPath() . '/render-dependency-recorder';
+        }
+
+        return str_starts_with($raw, '/')
+            ? rtrim($raw, '/')
+            : $projectPath . '/' . trim($raw, '/');
+    }
+
+    /**
+     * @param array<string, mixed> $config
+     *
      * @return array<string>
      */
     private function rootsList(array $config): array
