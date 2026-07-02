@@ -10,9 +10,9 @@
 [![PHP](https://img.shields.io/badge/PHP-8.2%20|%208.3%20|%208.4-blue.svg)](https://www.php.net/)
 [![License](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 
-Record which **files a request actually used to render** — Fluid templates, executed PHP, and frontend asset entries — keyed by an opaque header, written as one small JSON file per request. It turns a live page render into a precise dependency map: *for this page, these are the exact template/layout/partial/content-element files, the ViewHelpers/DataProcessors/services that executed, and the asset entrypoints it loaded.*
+Records which **files a request actually used to render** — Fluid templates, executed PHP, and frontend asset entries — as one small JSON file per request, keyed by a request header. A live page render becomes a precise dependency map.
 
-The recording is genuinely dynamic — it captures what *rendered and ran*, including which content elements a database-driven page assembled, which no static analysis can tell you.
+The recording is dynamic: it captures what *rendered and ran*, including which content elements a database-driven page assembled — something no static analysis can tell you.
 
 Capture has two depths:
 
@@ -38,6 +38,7 @@ Capture has two depths:
 - [The Vite import-graph plugin (optional)](#the-vite-import-graph-plugin-optional)
 - [Safety](#safety)
 - [A note on consumers](#a-note-on-consumers)
+- [Troubleshooting](#troubleshooting)
 
 ## What it captures
 
@@ -71,7 +72,7 @@ vendor/bin/typo3 extension:setup --extension=render_dependency_recorder
 
 ## Recording a request
 
-Send two request headers to the page(s) you want to record:
+Send these request headers to the page(s) you want to record:
 
 | Header | Required | Meaning |
 | --- | --- | --- |
@@ -79,10 +80,21 @@ Send two request headers to the page(s) you want to record:
 | `X-Render-Run` | no | A run id. All requests sharing it are written into one per-run directory. Defaults to `default`. |
 | `X-Render-Depth` | no | Set to `deep` to also capture executed PHP (requires Xdebug coverage). Otherwise `shallow`. |
 
-The header is honoured only in an allowed application context (`Testing` by default). Any client works — a test runner, a crawler, or a plain `curl`:
+The record header is honoured only in an allowed application context (`Testing` by default). Any client works — a test runner, a crawler, or a plain `curl`:
 
 ```bash
 curl -H 'X-Render-Record: home' -H 'X-Render-Run: run-1' https://example.ddev.site/
+```
+
+From a Playwright suite, use each test file as its recording key:
+
+```ts
+test.use({
+    extraHTTPHeaders: {
+        'X-Render-Record': 'home.spec.ts',
+        'X-Render-Run': process.env.RECORD_RUN_ID ?? 'default',
+    },
+})
 ```
 
 ## Deep capture (executed PHP)
@@ -98,7 +110,7 @@ Coverage records *executed* files (not merely loaded), so it is immune to autolo
 
 ## Frictionless deep recording with DDEV
 
-Deep capture needs the FPM worker started with `xdebug.mode=coverage`, which can't be toggled per request. A small **DDEV add-on ships with this extension** to make that a one-liner. Install it from the local package path (no public repo needed):
+Deep capture needs the FPM worker started with `xdebug.mode=coverage`, which can't be toggled per request. A small **DDEV add-on ships with this extension** to make that a one-liner. Install it straight from the installed package path:
 
 ```bash
 ddev add-on get vendor/wazum/typo3-render-dependency-recorder/Resources/Private/DdevAddon
@@ -243,6 +255,33 @@ The plugin only runs on `vite build` (`apply: 'build'`) and declares `vite >= 5`
 ## A note on consumers
 
 The manifest is a general render-dependency map, not tied to any one tool. A typical consumer is a change-based **test or page selector**: record the suite once, then map a `git diff` to exactly the tests whose pages rendered the changed files — so only affected tests run. Other uses (dependency explorers, architectural fitness checks over observed runtime edges) read the same data unchanged.
+
+The whole selection step fits in a few lines. Union the per-request files of a run into one `key → files` index:
+
+```bash
+jq -s 'group_by(.key) | map({(.[0].key): ([.[].files[], .[].assets[]] | unique)}) | add' \
+    var/render-dependency-recorder/requests/run-1/*.json > render-manifest.json
+```
+
+Then ask which keys rendered a changed file:
+
+```bash
+git diff --name-only main... | while read -r file; do
+    jq -r --arg file "$file" 'to_entries[] | select(.value | index($file)) | .key' render-manifest.json
+done | sort -u
+```
+
+With test files as recording keys, that output *is* the list of affected tests. For `.ts`/`.scss` changes, resolve the changed file to its entry through the [Vite import graph](#the-vite-import-graph-plugin-optional) first.
+
+## Troubleshooting
+
+Recording is best-effort by design — failures never break the request, so check here when output is missing:
+
+- **No JSON file written** — the application context doesn't match `activeContexts` (check `TYPO3_CONTEXT`), or a proxy in front of PHP strips the `X-Render-Record` header.
+- **`depth` stays `shallow` despite `X-Render-Depth: deep`** — the PHP worker serving the request wasn't started with `xdebug.mode=coverage`; `ddev render-record` handles that for you.
+- **`files` is empty or misses entries** — the recorded paths don't start with any configured `roots` prefix. Paths are compared repo-relative after `realpath`, so the prefixes must match your real directory layout.
+- **Component templates missing** — component capture is [opt-in](#capturing-components-opt-in).
+- Every swallowed recording error is logged at **warning** level — check the TYPO3 log.
 
 ## License
 
