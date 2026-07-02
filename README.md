@@ -1,8 +1,14 @@
-# Render Dependency Recorder for TYPO3 CMS
+<p align="center">
+  <img src="Resources/Public/Icons/Extension.svg" alt="Render Dependency Recorder" width="96" height="96">
+</p>
+<h1 align="center">Render Dependency Recorder</h1>
+<p align="center"><em>Know exactly which files every page render used.</em></p>
+<br>
 
-[![Supported TYPO3](https://img.shields.io/badge/TYPO3-13.4-orange.svg)](https://get.typo3.org/)
-[![Supported PHP](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.4-blue.svg)](https://www.php.net/)
-[![License](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](LICENSE)
+[![Tests](https://github.com/wazum/typo3-render-dependency-recorder/workflows/Tests/badge.svg)](https://github.com/wazum/typo3-render-dependency-recorder/actions)
+[![TYPO3](https://img.shields.io/badge/TYPO3-13.4%20|%2014.3%2B-orange.svg)](https://get.typo3.org/)
+[![PHP](https://img.shields.io/badge/PHP-8.2%20|%208.3%20|%208.4-blue.svg)](https://www.php.net/)
+[![License](https://img.shields.io/badge/License-GPL--2.0--or--later-blue.svg)](LICENSE)
 
 Record which **files a request actually used to render** — Fluid templates, executed PHP, and frontend asset entries — keyed by an opaque header, written as one small JSON file per request. It turns a live page render into a precise dependency map: *for this page, these are the exact template/layout/partial/content-element files, the ViewHelpers/DataProcessors/services that executed, and the asset entrypoints it loaded.*
 
@@ -29,6 +35,7 @@ Capture has two depths:
 - [How it works](#how-it-works)
 - [Capturing components (opt-in)](#capturing-components-opt-in)
 - [Capturing inline or custom assets (opt-in)](#capturing-inline-or-custom-assets-opt-in)
+- [The Vite import-graph plugin (optional)](#the-vite-import-graph-plugin-optional)
 - [Safety](#safety)
 - [A note on consumers](#a-note-on-consumers)
 
@@ -45,7 +52,7 @@ For every recorded request, filtered to your configured project roots (e.g. `sou
 
 ## Requirements
 
-- TYPO3 **13.4 LTS**
+- TYPO3 **13.4 LTS** or **14.3+**
 - PHP **8.2+**
 - Xdebug with `xdebug.mode=coverage` — **only for deep capture**. Shallow capture needs nothing extra. In DDEV this is handled for you (see [Frictionless deep recording with DDEV](#frictionless-deep-recording-with-ddev)).
 
@@ -59,7 +66,8 @@ composer require --dev wazum/typo3-render-dependency-recorder
 vendor/bin/typo3 extension:setup --extension=render_dependency_recorder
 ```
 
-Installing it as a dev dependency means a production build (`composer install --no-dev`) omits it entirely — a second line of defence on top of the context gate.
+> [!TIP]
+> Installing it as a dev dependency means a production build (`composer install --no-dev`) omits it entirely — a second line of defence on top of the context gate.
 
 ## Recording a request
 
@@ -83,7 +91,10 @@ Shallow capture (templates + assets) tells you which *Fluid files* rendered. Dee
 
 When `X-Render-Depth: deep` is sent **and** Xdebug coverage is available, the middleware wraps the render in `xdebug_start_code_coverage()` … `xdebug_get_code_coverage()`, keeps the executed files under your roots, and tags the entry `depth: deep`. If coverage isn't available it silently degrades to `shallow` — never an error.
 
-Coverage records *executed* files (not merely loaded), so it is immune to autoload/opcache warm-worker state and to DI-container-compilation noise. It costs ~2–5× render time, which is why deep is opt-in per request and meant for an occasional full record run, not everyday requests.
+Coverage records *executed* files (not merely loaded), so it is immune to autoload/opcache warm-worker state and to DI-container-compilation noise.
+
+> [!IMPORTANT]
+> Deep capture costs ~2–5× render time. It is opt-in per request and meant for an occasional full record run, not everyday requests.
 
 ## Frictionless deep recording with DDEV
 
@@ -103,7 +114,7 @@ It enables Xdebug, flips FPM to coverage mode via `supervisorctl restart php-fpm
 
 ## Output
 
-Each recorded request writes one randomly-named file under:
+Each recorded request writes one randomly-named file under (configurable via `outputDirectory`):
 
 ```
 var/render-dependency-recorder/requests/<runId>/<random>.json
@@ -140,6 +151,8 @@ Extension Configuration (Admin Tools → Settings, or `EXTENSIONS/render_depende
 | `depthHeader` | `X-Render-Depth` | Header requesting deep capture when its value is `deep`. |
 | `activeContexts` | `Testing` | Comma-separated application-context prefixes in which recording is allowed. |
 | `roots` | `source/,local/` | Comma-separated repo-relative prefixes; only files under these are recorded. |
+| `outputDirectory` | *(empty)* | Where per-request files are written — absolute, or relative to the project root. Empty means `var/render-dependency-recorder`. |
+| `projectRoot` | *(empty)* | Absolute path recorded file paths are made relative to. Empty means the composer project root. |
 
 ## How it works
 
@@ -173,7 +186,10 @@ public function getTemplatePaths(): TemplatePaths
 }
 ```
 
-The `class_exists` guard keeps this a no-op when the extension is not installed (e.g. production). If you cache the built `TemplatePaths`, cache the active and inactive variants separately so an inactive lookup cannot poison a later recording render.
+The `class_exists` guard keeps this a no-op when the extension is not installed (e.g. production).
+
+> [!WARNING]
+> If you cache the built `TemplatePaths`, cache the active and inactive variants separately so an inactive lookup cannot poison a later recording render.
 
 ## Capturing inline or custom assets (opt-in)
 
@@ -190,6 +206,32 @@ if (
     $recorder->recordAssetEntry('source/critical.ts');
 }
 ```
+
+## The Vite import-graph plugin (optional)
+
+The recorded `assets` are Vite *entrypoints*. To map a changed `.ts`/`.scss` **source file** back to the entry that bundles it, you need the build-time import graph — and a small Vite plugin shipping with this extension emits exactly that: a JSON map of each entry to the project source files it is built from (`.ts`/`.js` transitively via the Rollup module graph, `.scss` including `@use`/`@import` partials via sass).
+
+It ships precompiled under `Resources/Private/Vite/dist` — no npm install or build step required:
+
+```ts
+// vite.config.ts
+const { renderGraph } = await import(
+    './vendor/wazum/typo3-render-dependency-recorder/Resources/Private/Vite/dist/index.js'
+)
+
+export default defineConfig({
+    plugins: [
+        renderGraph({
+            projectRoot: __dirname,            // default: process.cwd()
+            roots: ['source/', 'local/'],      // repo-relative prefixes to keep (default shown)
+            outFile: '/abs/path/graph.json',   // default: <projectRoot>/var/render-dependency-recorder/render-graph.json
+            sassLoadPaths: [],                 // extra sass loadPaths, if your build uses any
+        }),
+    ],
+})
+```
+
+The plugin only runs on `vite build` (`apply: 'build'`) and declares `vite >= 5` and `sass >= 1.60` as peer dependencies — both already present in any Vite + SCSS project. A consumer joins the per-request `assets` with this graph to resolve a changed source module to the pages (and tests) that loaded its entry.
 
 ## Safety
 
