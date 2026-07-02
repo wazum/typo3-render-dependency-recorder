@@ -35,14 +35,35 @@ STATUS="$(curl -sk \
     "${URL}" -o /dev/null -w '%{http_code}')"
 echo "[render-record] HTTP ${STATUS}"
 
-RUN_DIR="${DDEV_APPROOT:-.}/var/render-dependency-recorder/requests/${RUN_ID}"
-FILE_COUNT="$(find "${RUN_DIR}" -name '*.json' 2>/dev/null | wc -l | tr -d ' ')"
-if [ "${FILE_COUNT}" -gt 0 ]; then
-    echo "[render-record] ${FILE_COUNT} request file(s) written under var/render-dependency-recorder/requests/${RUN_ID}/"
+# Resolve the output directory exactly like the extension's middleware does:
+# extension configuration outputDirectory (absolute, or relative to projectRoot),
+# empty means <project>/var/render-dependency-recorder.
+OUTPUT_DIR="$(ddev exec php -- <<'PHP'
+<?php
+$settings = @include 'config/system/settings.php';
+$config = is_array($settings) ? ($settings['EXTENSIONS']['render_dependency_recorder'] ?? []) : [];
+$directory = trim((string)($config['outputDirectory'] ?? ''));
+$projectRoot = rtrim(trim((string)($config['projectRoot'] ?? '')), '/');
+if ($projectRoot === '') {
+    $projectRoot = getcwd();
+}
+if ($directory === '') {
+    echo 'var/render-dependency-recorder';
+} elseif (str_starts_with($directory, '/')) {
+    echo rtrim($directory, '/');
+} else {
+    echo $projectRoot . '/' . trim($directory, '/');
+}
+PHP
+)"
+
+RUN_DIR="${OUTPUT_DIR}/requests/${RUN_ID}"
+FILE_COUNT="$(ddev exec "find '${RUN_DIR}' -name '*.json' 2>/dev/null | wc -l" | tr -d '[:space:]' || true)"
+if [ "${FILE_COUNT:-0}" -gt 0 ]; then
+    echo "[render-record] ${FILE_COUNT} request file(s) written under ${RUN_DIR}/"
 else
-    echo "[render-record] WARNING: no request file found under var/render-dependency-recorder/requests/${RUN_ID}/" >&2
-    echo "  Possible causes: application context not in activeContexts (default: Testing)," >&2
-    echo "  a custom outputDirectory in the extension configuration, or the header was" >&2
-    echo "  stripped before reaching PHP." >&2
+    echo "[render-record] WARNING: no request file found under ${RUN_DIR}/" >&2
+    echo "  Possible causes: application context not in activeContexts (default: Testing)" >&2
+    echo "  or the record header was stripped before reaching PHP." >&2
     exit 1
 fi
